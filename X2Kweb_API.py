@@ -434,58 +434,6 @@ def absent_perturbed_kinases(DF):
             absentPerturbed.append(pert)
     return absentPerturbed
 
-def replace_NAs_with_random_rank(DF):
-    # Get list of perturbed kinases that are absent from the output file
-    absentPerturbed = absent_perturbed_kinases(DF)
-    newDF = pd.concat([DF['Kinase'], pd.Series(absentPerturbed).rename('Kinase')]).reset_index()['Kinase']
-    # Assign ranks
-    import math
-    from random import shuffle
-    for col in DF.iloc[:,1:]:
-        newRanks=[]
-        DFcol = DF[col]
-        print(col)
-        # Create lists of remaining ranks
-        maxRank = int(max(DFcol.dropna()))
-        remainingRanks = list(range(maxRank+1,len(newDF)))
-        shuffle(remainingRanks)
-        # Replace any NAs with random rank
-        NAcount=0
-        for inputRank in DFcol:
-            if math.isnan(inputRank):
-                #newRanks.append( np.random.choice(remainingRanks, 1, replace=False)[0] )
-                newRanks.append( remainingRanks[NAcount] )
-                NAcount+=1
-            else:
-                newRanks.append( int(inputRank) )
-        for ap in absentPerturbed:
-            newRanks.append(remainingRanks[NAcount])
-            NAcount+=1
-        newCol = pd.Series(newRanks, name=col)
-        newDF = pd.concat([newDF, newCol], axis=1)
-    return newDF
-
-#
-#
-# def zscore_Ranks(DF):
-#     newRanks_DF=pd.DataFrame()
-#     from scipy import stats
-#     rankDF =  DF.iloc[:,1:].copy()
-#     zscoreDF = pd.DataFrame(stats.zscore(rankDF, axis=1), columns=rankDF.columns)
-#     for col in zscoreDF:
-#         orderedCol = zscoreDF[col]
-#         orderedCol.index = DF['Kinase']
-#         orderedCol = orderedCol.sort_values()
-#         newRanks = pd.Series(data=range(0,len(orderedCol)), name=col, index=orderedCol.index)
-#         #Merge DFs on index
-#         newRanks_DF = pd.concat([newRanks_DF, newRanks], axis=1)
-#         #Add kinase col
-#         newKinaseCol = pd.Series(newRanks_DF.index, name='Kinase', index=newRanks_DF.index)
-#         zscoreRanks_DF = pd.concat([newKinaseCol, newRanks_DF ], axis=1)
-#         zscoreRanks_DF = zscoreRanks_DF.reset_index()
-#         del zscoreRanks_DF['index']
-#         return zscoreRanks_DF
-
 
 """
 def run_X2K(kinase_file, save_file, options=best_options, verbose=False):
@@ -545,7 +493,7 @@ def run_X2K(kinase_file, save_file, options=best_options, verbose=False):
 
 #cd Kinase_Enrichment_Comparisons
 
-def run_X2K_allGenes(kinase_file, save_file='No', options=best_options, verbose=False, replaceNAs=False, outputValues='pvalue'):
+def run_X2K_allGenes(kinase_file, save_file='No', options=best_options, verbose=False, outputValues='pvalue'):
     finalDF = pd.DataFrame(columns=['Kinase'])
     try:
         os.remove(save_file)
@@ -555,7 +503,7 @@ def run_X2K_allGenes(kinase_file, save_file='No', options=best_options, verbose=
     experiment_names = pd.read_table(kinase_file, header=None).iloc[:,0].tolist()
     index = 0
     for kinase, genes in kinase_genes:
-
+        print(kinase)
         try:
             last = time.time()
             score = float('nan')
@@ -589,10 +537,6 @@ def run_X2K_allGenes(kinase_file, save_file='No', options=best_options, verbose=
         except KeyboardInterrupt:
             break
         index+=1
-    if replaceNAs==True:
-        finalDF = replace_NAs_with_random_rank(finalDF)
-    #if rankingMethod == '-log(pvalue)':
-        #kinase_ranks = zscore_Ranks(kinase_ranks)
     # Save result to file
     if save_file!='No':
         finalDF.to_csv(save_file, sep='\t', header=True, index=None, na_rep='NA')
