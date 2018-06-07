@@ -67,6 +67,7 @@ def test_enrichr_to_input_genes_target_kinase():
         break
 
 
+
 def produce_random_option(options_grid):
     return {
         option_name: option_value.next() if isinstance(option_value, Pick) else option_value
@@ -159,6 +160,10 @@ def parse_x2k_response_kinases(x2k_results, significant=0.05):
         key: json.loads(value) if key != 'input' else value
         for key, value in json.loads(x2k_results).items()
     }
+    TFs = {
+        tf['name']: tf
+        for tf in x2k_results_parsed['ChEA']['tfs']
+    }
     kinases = {
         kinase['name']: kinase
         for kinase in x2k_results_parsed['KEA']['kinases']
@@ -173,6 +178,7 @@ def parse_x2k_response_kinases(x2k_results, significant=0.05):
         if kinase['pvalue'] < significant
     ])
     return {
+        'TFs': TFs,
         'kinases': kinases,
         'n_g2n_nodes': n_g2n_nodes,
         'n_sig_kinases': n_sig_kinases,
